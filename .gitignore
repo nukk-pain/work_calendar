@@ -42,3 +42,9 @@ next-env.d.ts
 
 #예시파일
 G_EXhTdXkAAOzNf.jpg
+
+# 개발 문서 (공유 불필요)
+design.md
+spec.md
+ENV_SETUP.md
+prompts.md
