@@ -13,6 +13,7 @@ interface ScheduleState {
     schedule: DoctorDaySchedule
   ) => void;
   updateDayData: (year: number, month: number, day: number, data: Partial<DayData>) => void;
+  updateNoticeText: (year: number, month: number, noticeText: string) => void;
   getMonthSchedule: (year: number, month: number) => MonthSchedule | undefined;
   clearMonthSchedule: (year: number, month: number) => void;
   setAllSchedules: (schedules: Record<string, MonthSchedule>) => void;
@@ -81,6 +82,23 @@ export const useScheduleStore = create<ScheduleState>()(
                   ...monthSchedule.days,
                   [dayKey]: { ...dayData, ...data },
                 },
+              },
+            },
+          };
+        }),
+
+      updateNoticeText: (year, month, noticeText) =>
+        set((state) => {
+          const key = getScheduleKey(year, month);
+          const monthSchedule = state.schedules[key];
+          if (!monthSchedule) return state;
+
+          return {
+            schedules: {
+              ...state.schedules,
+              [key]: {
+                ...monthSchedule,
+                noticeText,
               },
             },
           };

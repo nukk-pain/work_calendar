@@ -24,6 +24,9 @@ export type WeeklySchedule = {
 export type RecurringRuleType = 'weekly' | 'biweekly' | 'monthly';
 export type TimePeriod = 'all' | 'morning' | 'afternoon';
 
+// 캘린더 표시 모드
+export type DisplayMode = 'detailed' | 'simple';
+
 export interface RecurringRule {
   id: string;
   doctorId: string;
@@ -87,6 +90,7 @@ export interface MonthSchedule {
   month: number;
   generatedAt: string; // ISO 8601 형식
   days: Record<string, DayData>; // 일자(1-31)를 키로
+  noticeText?: string; // 월별 안내 문구 (시즌 테마에서 표시)
 }
 
 // 공휴일 데이터 (정적 JSON용)

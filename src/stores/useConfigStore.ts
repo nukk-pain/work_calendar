@@ -1,15 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { 
-  Config, 
-  Doctor, 
-  WeeklySchedule, 
-  RecurringRule, 
+import {
+  Config,
+  Doctor,
+  WeeklySchedule,
+  RecurringRule,
   HospitalHoliday,
-  Hospital 
+  Hospital,
+  DisplayMode
 } from '@/types';
 
 interface ConfigState extends Config {
+  themeId: string;
+  displayMode: DisplayMode;
+  noticeText: string;
+  setThemeId: (themeId: string) => void;
+  setDisplayMode: (mode: DisplayMode) => void;
+  setNoticeText: (text: string) => void;
   setHospital: (hospital: Hospital) => void;
   addDoctor: (doctor: Doctor) => void;
   updateDoctor: (id: string, updates: Partial<Doctor>) => void;
@@ -46,6 +53,15 @@ export const useConfigStore = create<ConfigState>()(
   persist(
     (set) => ({
       ...initialConfig,
+      themeId: 'auto',
+      displayMode: 'detailed',
+      noticeText: '* 빨간색 표시는 휴진입니다. 내원 시 착오 없으시길 바랍니다.',
+
+      setThemeId: (themeId) => set({ themeId }),
+
+      setDisplayMode: (mode) => set({ displayMode: mode }),
+
+      setNoticeText: (text) => set({ noticeText: text }),
 
       setHospital: (hospital) => set({ hospital }),
 

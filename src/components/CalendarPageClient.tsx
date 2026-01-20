@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Calendar, SettingsSidebar, PdfExportModal, SetupWizard } from '@/components';
+import { Calendar, CalendarHeader, SettingsSidebar, PdfExportModal, SetupWizard } from '@/components';
 import { useConfigStore, useScheduleStore, useAuthStore } from '@/stores';
 import { generateMonthSchedule } from '@/utils/scheduleGenerator';
 import { initGoogleAuth, requestAccessToken, getUserInfo, revokeToken } from '@/utils/googleAuth';
 import { initializeDriveFolders, saveConfig, loadConfig, saveMonthSchedule, loadAllSchedules } from '@/utils/googleDrive';
 import { PublicHoliday, DoctorDaySchedule, DayOfWeek, Config, MonthSchedule } from '@/types';
+import { getThemeById } from '@/utils/pdfThemes';
 
 const AUTOSAVE_DELAY = 3000;
 
@@ -33,9 +34,10 @@ export default function CalendarPageClient({
   const [showSetupWizard, setShowSetupWizard] = useState(false);
   const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedDataRef = useRef<string>('');
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const config = useConfigStore();
-  const { setMonthSchedule, getMonthSchedule, updateDaySchedule, setAllSchedules, schedules } = useScheduleStore();
+  const { setMonthSchedule, getMonthSchedule, updateDaySchedule, updateNoticeText, setAllSchedules, schedules } = useScheduleStore();
   const { 
     isLoggedIn, 
     user, 
@@ -194,7 +196,8 @@ export default function CalendarPageClient({
       month,
       config,
       publicHolidays,
-      getMonthSchedule(year, month)
+      getMonthSchedule(year, month),
+      config.noticeText
     );
     setMonthSchedule(year, month, schedule);
   };
@@ -329,6 +332,7 @@ export default function CalendarPageClient({
       )}
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        <CalendarHeader year={year} month={month} />
         {activeDoctors.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <p className="text-gray-500 mb-4">등록된 의사가 없습니다.</p>
@@ -343,15 +347,44 @@ export default function CalendarPageClient({
             </button>
           </div>
         ) : (
-          <Calendar
-            year={year}
-            month={month}
-            hospitalName={config.hospital.name}
-            doctors={activeDoctors}
-            dayData={monthSchedule?.days || {}}
-            onUpdateSchedule={handleUpdateSchedule}
-            onResetSchedule={handleResetSchedule}
-          />
+          <>
+            {(() => {
+              const effectiveThemeId = config.themeId === 'auto'
+                ? ['january', 'february', 'march', 'april', 'may', 'june',
+                   'july', 'august', 'september', 'october', 'november', 'december'][month - 1]
+                : config.themeId;
+              const theme = getThemeById(effectiveThemeId);
+
+              if (theme.hasIllustration && monthSchedule) {
+                return (
+                  <div className="mb-4 flex items-center gap-2">
+                    <label className="text-sm text-gray-600 whitespace-nowrap">안내 문구:</label>
+                    <input
+                      type="text"
+                      value={monthSchedule.noticeText ?? config.noticeText}
+                      onChange={(e) => updateNoticeText(year, month, e.target.value)}
+                      placeholder="안내 문구를 입력하세요"
+                      className="flex-1 px-3 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            <Calendar
+              ref={calendarRef}
+              year={year}
+              month={month}
+              hospitalName={config.hospital.name}
+              doctors={activeDoctors}
+              dayData={monthSchedule?.days || {}}
+              themeId={config.themeId}
+              displayMode={config.displayMode}
+              noticeText={monthSchedule?.noticeText ?? config.noticeText}
+              onUpdateSchedule={handleUpdateSchedule}
+              onResetSchedule={handleResetSchedule}
+            />
+          </>
         )}
       </main>
 
@@ -366,8 +399,7 @@ export default function CalendarPageClient({
         year={year}
         month={month}
         hospitalName={config.hospital.name}
-        doctors={activeDoctors}
-        dayData={monthSchedule?.days || {}}
+        calendarRef={calendarRef}
       />
 
       {showSetupWizard && (

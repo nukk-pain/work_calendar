@@ -6,8 +6,9 @@ import DoctorManagement from './settings/DoctorManagement';
 import DefaultScheduleSettings from './settings/DefaultScheduleSettings';
 import RecurringRulesSettings from './settings/RecurringRulesSettings';
 import HospitalHolidaysSettings from './settings/HospitalHolidaysSettings';
+import ThemeSettings from './settings/ThemeSettings';
 
-type SettingsTab = 'doctors' | 'schedule' | 'recurring' | 'holidays';
+type SettingsTab = 'doctors' | 'schedule' | 'recurring' | 'holidays' | 'theme';
 
 interface SettingsSidebarProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'schedule', label: '기본 근무' },
   { id: 'recurring', label: '반복 규칙' },
   { id: 'holidays', label: '병원 휴일' },
+  { id: 'theme', label: '테마' },
 ];
 
 export default function SettingsSidebar({ isOpen, onToggle }: SettingsSidebarProps) {
@@ -71,6 +73,7 @@ export default function SettingsSidebar({ isOpen, onToggle }: SettingsSidebarPro
           {activeTab === 'schedule' && <DefaultScheduleSettings />}
           {activeTab === 'recurring' && <RecurringRulesSettings />}
           {activeTab === 'holidays' && <HospitalHolidaysSettings />}
+          {activeTab === 'theme' && <ThemeSettings />}
         </div>
       </div>
 

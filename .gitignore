@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#예시파일
+G_EXhTdXkAAOzNf.jpg

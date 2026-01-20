@@ -104,7 +104,8 @@ export function generateMonthSchedule(
   month: number,
   config: Config,
   publicHolidays: PublicHoliday[] = [],
-  existingSchedule?: MonthSchedule
+  existingSchedule?: MonthSchedule,
+  defaultNoticeText?: string
 ): MonthSchedule {
   const daysInMonth = getDaysInMonth(year, month);
   const days: Record<string, DayData> = {};
@@ -180,5 +181,6 @@ export function generateMonthSchedule(
     month,
     generatedAt: new Date().toISOString(),
     days,
+    noticeText: existingSchedule?.noticeText ?? defaultNoticeText,
   };
 }

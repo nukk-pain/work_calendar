@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PencilIcon } from '@heroicons/react/24/outline';
 import { CalendarDay } from '@/utils/calendar';
-import { Doctor, DoctorDaySchedule } from '@/types';
+import { Doctor, DoctorDaySchedule, DisplayMode } from '@/types';
+import { PdfTheme } from '@/utils/pdfThemes';
 import ContextMenu from './ContextMenu';
 import TimePickerModal from './TimePickerModal';
+import DayDetailModal from './DayDetailModal';
 
 interface CalendarCellProps {
   day: CalendarDay;
@@ -14,6 +15,8 @@ interface CalendarCellProps {
   schedules?: Record<string, DoctorDaySchedule>;
   holidayName?: string;
   isHoliday?: boolean;
+  theme?: PdfTheme;
+  displayMode?: DisplayMode;
   onUpdateSchedule?: (doctorId: string, schedule: DoctorDaySchedule) => void;
   onResetSchedule?: (doctorId: string) => void;
 }
@@ -24,12 +27,13 @@ export default function CalendarCell({
   schedules = {},
   holidayName,
   isHoliday = false,
+  theme,
+  displayMode = 'detailed',
   onUpdateSchedule,
   onResetSchedule,
 }: CalendarCellProps) {
   const router = useRouter();
   const isSunday = day.dayOfWeek === 0;
-  const isSaturday = day.dayOfWeek === 6;
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -45,9 +49,13 @@ export default function CalendarCell({
     end: string;
   } | null>(null);
 
+  const [showDayDetail, setShowDayDetail] = useState(false);
+
   const handleClick = () => {
     if (!day.isCurrentMonth) {
       router.push(`/${day.year}/${String(day.month).padStart(2, '0')}`);
+    } else if (displayMode === 'simple') {
+      setShowDayDetail(true);
     }
   };
 
@@ -118,74 +126,94 @@ export default function CalendarCell({
     onResetSchedule(contextMenu.doctorId);
   };
 
+  const tdStyle = theme?.styles.td(day.isCurrentMonth, isSunday, day.dayOfWeek) || {};
+  const dateStyle = theme?.styles.dateText(day.isCurrentMonth, isSunday, day.dayOfWeek, isHoliday) || {};
+  const hasIllustration = theme?.hasIllustration ?? false;
+
   return (
     <>
-      <div
+      <td
         onClick={handleClick}
+        style={{ ...tdStyle, position: 'relative' }}
         className={`
-          min-h-[120px] border-b border-r border-gray-200 p-1
-          ${!day.isCurrentMonth ? 'bg-gray-50 cursor-pointer hover:bg-gray-100' : 'bg-white'}
+          ${!day.isCurrentMonth ? 'cursor-pointer' : ''}
+          ${day.isCurrentMonth && displayMode === 'simple' ? 'cursor-pointer hover:bg-gray-50' : ''}
           ${day.isToday ? 'ring-2 ring-inset ring-blue-500' : ''}
         `}
       >
-        <div className="flex flex-col h-full">
-          <div className="flex items-start justify-between mb-1">
-            <span
-              className={`
-                text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full
-                ${day.isToday ? 'bg-blue-500 text-white' : ''}
-                ${!day.isToday && (isSunday || isHoliday) ? 'text-red-500' : ''}
-                ${!day.isToday && isSaturday && !isHoliday ? 'text-blue-500' : ''}
-                ${!day.isToday && !isSunday && !isSaturday && !isHoliday ? 'text-gray-900' : ''}
-                ${!day.isCurrentMonth ? 'text-gray-400' : ''}
-              `}
-            >
-              {day.date}
-            </span>
+        {/* Winter Warmth Theme: 3D OFF Badge */}
+        {hasIllustration && day.isCurrentMonth && (isHoliday || isSunday) && (
+          <div
+            className="absolute top-0 left-0 z-10 flex items-center justify-center shadow-md"
+            style={{
+              width: '36px',
+              height: '36px',
+              backgroundColor: '#ef4444',
+              borderRadius: '0 0 12px 0', // Top-left corner style
+              boxShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+              background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+            }}
+          >
+            <span className="text-white font-bold text-xs transform -rotate-45" style={{ textShadow: '0px 1px 1px rgba(0,0,0,0.3)' }}>OFF</span>
           </div>
+        )}
 
-          {holidayName && (
-            <span className="text-xs text-red-500 truncate mb-1">{holidayName}</span>
-          )}
-
-          <div className="flex-1 space-y-0.5 overflow-hidden">
-            {doctors.map((doctor) => {
-              const schedule = schedules[doctor.id];
-              const isOff = !schedule || schedule.status === 'off';
-              const isManualEdit = schedule?.isManualEdit;
-
-              return (
-                <div
-                  key={doctor.id}
-                  onContextMenu={(e) => handleContextMenu(e, doctor.id)}
-                  className={`
-                    flex items-center gap-1 text-xs rounded px-1 py-0.5 cursor-context-menu
-                    ${isOff ? 'bg-gray-100 text-gray-400' : 'bg-gray-50'}
-                    ${day.isCurrentMonth ? 'hover:bg-gray-200' : ''}
-                  `}
-                >
-                  <div
-                    className="w-1 h-4 rounded-sm flex-shrink-0"
-                    style={{ backgroundColor: isOff ? '#d1d5db' : doctor.color }}
-                  />
-                  <span
-                    className="truncate font-medium"
-                    style={{ color: isOff ? '#9ca3af' : doctor.color }}
-                  >
-                    {doctor.name}
-                  </span>
-                  <span className="text-gray-500 truncate flex-1">
-                    {isOff ? '휴진' : formatTime(schedule.start, schedule.end)}
-                  </span>
-                  {isManualEdit && (
-                    <PencilIcon className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        <div style={dateStyle} className={hasIllustration ? "flex justify-end pr-2 pt-1" : ""}>
+          {day.date}
         </div>
-      </div>
+
+        {holidayName && (
+          <div className={`text-xs text-red-500 mb-1 ${!theme ? 'truncate' : ''} ${hasIllustration ? 'text-right pr-1 font-medium' : ''}`} style={{ fontSize: '22px', lineHeight: '1.3' }}>
+            {holidayName}
+          </div>
+        )}
+
+        {displayMode === 'simple' ? (
+          // 심플 모드: 휴진 여부만 표시
+          day.isCurrentMonth && (isHoliday || isSunday) && !hasIllustration && (
+            <div className="flex flex-col items-center mt-1">
+              <span
+                className="text-xs font-bold px-1.5 py-0.5 rounded"
+                style={{
+                  backgroundColor: '#1e3a5f',
+                  color: 'white',
+                  fontSize: '20px',
+                }}
+              >
+                OFF
+              </span>
+              <span className="text-xs mt-0.5" style={{ fontSize: '22px', color: '#1e3a5f' }}>
+                휴진
+              </span>
+            </div>
+          )
+        ) : (
+          // 상세 모드: 의사별 일정 표시
+          day.isCurrentMonth && !isHoliday && !isSunday && doctors.map((doctor) => {
+            const schedule = schedules[doctor.id];
+            const isOff = !schedule || schedule.status === 'off';
+            const isManualEdit = schedule?.isManualEdit;
+
+            return (
+              <div
+                key={doctor.id}
+                onContextMenu={(e) => handleContextMenu(e, doctor.id)}
+                className="text-xs truncate cursor-context-menu hover:bg-gray-200 rounded px-0.5"
+                style={{
+                  fontSize: '22px',
+                  lineHeight: '1.4',
+                  color: !isOff ? doctor.color : '#9ca3af',
+                  opacity: isOff ? 0.7 : 1,
+                  textAlign: hasIllustration ? 'right' : 'left',
+                }}
+              >
+                {doctor.name}: {isOff ? '휴진' : formatTime(schedule.start, schedule.end)}
+                {isManualEdit && ' ✎'}
+              </div>
+            );
+          })
+        )}
+      </td>
 
       {contextMenu && (
         <ContextMenu
@@ -207,6 +235,19 @@ export default function CalendarCell({
           initialStart={timePickerState.start}
           initialEnd={timePickerState.end}
           doctorName={timePickerState.doctorName}
+        />
+      )}
+
+      {showDayDetail && onUpdateSchedule && onResetSchedule && (
+        <DayDetailModal
+          isOpen={showDayDetail}
+          day={day}
+          doctors={doctors}
+          schedules={schedules}
+          holidayName={holidayName}
+          onClose={() => setShowDayDetail(false)}
+          onUpdateSchedule={onUpdateSchedule}
+          onResetSchedule={onResetSchedule}
         />
       )}
     </>
