@@ -200,7 +200,7 @@ export default function CalendarCell({
                 onContextMenu={(e) => handleContextMenu(e, doctor.id)}
                 className="text-xs truncate cursor-context-menu hover:bg-gray-200 rounded px-0.5"
                 style={{
-                  fontSize: '22px',
+                  fontSize: '11px',
                   lineHeight: '1.4',
                   color: !isOff ? doctor.color : '#9ca3af',
                   opacity: isOff ? 0.7 : 1,
